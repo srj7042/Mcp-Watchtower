@@ -1,0 +1,208 @@
+{
+  "name": "mcp-watchtower",
+  "displayName": "MCP Watchtower",
+  "description": "Production-oriented, local-first MCP server monitoring extension for Visual Studio Code and Google Antigravity",
+  "version": "1.0.0",
+  "publisher": "surajjaiswal",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/surajjaiswal/mcp-watchtower.git"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other",
+    "Programming Languages",
+    "Linters"
+  ],
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "antigravity",
+    "monitoring",
+    "diagnostics"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "mcpWatchtower.openDashboard",
+        "title": "Open Dashboard",
+        "category": "MCP Watchtower"
+      },
+      {
+        "command": "mcpWatchtower.refreshAll",
+        "title": "Refresh All Servers",
+        "category": "MCP Watchtower",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "mcpWatchtower.refreshServer",
+        "title": "Refresh Server",
+        "category": "MCP Watchtower"
+      },
+      {
+        "command": "mcpWatchtower.inspectServer",
+        "title": "Inspect Server Details",
+        "category": "MCP Watchtower"
+      },
+      {
+        "command": "mcpWatchtower.validateConfiguration",
+        "title": "Validate Configuration Files",
+        "category": "MCP Watchtower"
+      },
+      {
+        "command": "mcpWatchtower.showDiagnostics",
+        "title": "Show Diagnostics Output Channel",
+        "category": "MCP Watchtower"
+      },
+      {
+        "command": "mcpWatchtower.copySanitizedReport",
+        "title": "Copy Sanitized Diagnostic Report",
+        "category": "MCP Watchtower"
+      },
+      {
+        "command": "mcpWatchtower.toggleMonitoring",
+        "title": "Toggle Periodic Monitoring",
+        "category": "MCP Watchtower"
+      },
+      {
+        "command": "mcpWatchtower.openSettings",
+        "title": "Open Watchtower Settings",
+        "category": "MCP Watchtower"
+      },
+      {
+        "command": "mcpWatchtower.runConsentBasedDiagnostic",
+        "title": "Run Consent-Based Diagnostic (Stdio)",
+        "category": "MCP Watchtower"
+      },
+      {
+        "command": "mcpWatchtower.connectServer",
+        "title": "Connect / Test Server",
+        "category": "MCP Watchtower",
+        "icon": "$(plug)"
+      }
+    ],
+    "menus": {
+      "view/item/context": [
+        {
+          "command": "mcpWatchtower.connectServer",
+          "when": "view == mcpWatchtower.serverExplorer",
+          "group": "inline"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "mcpWatchtower.openDashboard",
+          "when": "view == mcpWatchtower.serverExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "mcpWatchtower.refreshAll",
+          "when": "view == mcpWatchtower.serverExplorer",
+          "group": "navigation"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "mcp-watchtower-container",
+          "title": "MCP Watchtower",
+          "icon": "dist/ui/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "mcp-watchtower-container": [
+        {
+          "id": "mcpWatchtower.serverExplorer",
+          "name": "Configured MCP Servers",
+          "type": "tree"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "MCP Watchtower",
+      "properties": {
+        "mcpWatchtower.monitoring.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable automatic periodic health monitoring of configured MCP servers."
+        },
+        "mcpWatchtower.monitoring.checkIntervalSeconds": {
+          "type": "number",
+          "default": 60,
+          "minimum": 10,
+          "maximum": 3600,
+          "description": "Interval in seconds between automatic health checks."
+        },
+        "mcpWatchtower.monitoring.requestTimeoutSeconds": {
+          "type": "number",
+          "default": 8,
+          "minimum": 2,
+          "maximum": 60,
+          "description": "Timeout in seconds for diagnostic handshakes."
+        },
+        "mcpWatchtower.monitoring.maxConcurrentChecks": {
+          "type": "number",
+          "default": 2,
+          "minimum": 1,
+          "maximum": 5,
+          "description": "Maximum number of simultaneous diagnostic checks."
+        },
+        "mcpWatchtower.monitoring.allowAutoStdioDiagnostic": {
+          "type": "boolean",
+          "default": false,
+          "description": "Allow automatic isolated stdio process launches without individual manual consent (Disabled by default for safety)."
+        },
+        "mcpWatchtower.security.allowLocalInsecureHttp": {
+          "type": "boolean",
+          "default": true,
+          "description": "Allow unencrypted http:// connections strictly to localhost and 127.0.0.1 for local MCP servers."
+        },
+        "mcpWatchtower.security.blockCloudMetadataEndpoints": {
+          "type": "boolean",
+          "default": true,
+          "description": "Block requests to cloud instance metadata services (e.g. 169.254.169.254)."
+        },
+        "mcpWatchtower.customConfigPaths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Additional paths to scan for MCP configuration files."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "test": "vitest run",
+    "package": "node esbuild.js --production && vsce package --no-dependencies"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "@types/vscode": "^1.90.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "@vscode/vsce": "^3.2.1",
+    "esbuild": "^0.25.0",
+    "eslint": "^8.57.0",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  }
+}

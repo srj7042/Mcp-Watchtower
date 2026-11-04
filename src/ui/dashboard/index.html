@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src {{cspSource}} 'unsafe-inline'; script-src 'nonce-{{nonce}}'; font-src {{cspSource}};">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MCP Watchtower Dashboard</title>
+  <link rel="stylesheet" href="{{styleUri}}">
+</head>
+<body>
+  <header class="dashboard-header">
+    <div class="brand">
+      <h1>MCP Watchtower</h1>
+      <span id="monitoringBadge" class="badge active">Monitoring: Active</span>
+    </div>
+    <div class="header-actions">
+      <button id="btnRefreshAll" class="btn-action primary" title="Refresh all servers">
+        <span>Refresh All</span>
+      </button>
+      <button id="btnToggleMonitoring" class="btn-action" title="Pause or resume background checks">
+        <span>Pause</span>
+      </button>
+      <button id="btnSettings" class="btn-action" title="Open Watchtower settings">
+        <span>Settings</span>
+      </button>
+      <button id="btnCopyReport" class="btn-action" title="Copy full sanitized report to clipboard">
+        <span>Copy Report</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Summary Cards -->
+  <section class="summary-bar">
+    <div class="summary-card">
+      <div id="summaryTotal" class="count">0</div>
+      <div class="label">Total</div>
+    </div>
+    <div class="summary-card healthy">
+      <div id="summaryHealthy" class="count">0</div>
+      <div class="label">Healthy</div>
+    </div>
+    <div class="summary-card degraded">
+      <div id="summaryDegraded" class="count">0</div>
+      <div class="label">Degraded</div>
+    </div>
+    <div class="summary-card error">
+      <div id="summaryError" class="count">0</div>
+      <div class="label">Errors</div>
+    </div>
+    <div class="summary-card unknown">
+      <div id="summaryUnknown" class="count">0</div>
+      <div class="label">Pending/Unknown</div>
+    </div>
+  </section>
+
+  <!-- Filter & Search -->
+  <section class="filter-bar">
+    <input type="text" id="searchInput" class="filter-input" placeholder="Filter servers by name, transport, or source..." />
+  </section>
+
+  <!-- Server List Container -->
+  <main id="serverListContainer" class="server-list">
+    <div class="empty-state">
+      <h2>Discovering MCP Servers...</h2>
+      <p>Reading configuration files from global and workspace scopes.</p>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="dashboard-footer">
+    <div>Last checked: <span id="lastRefreshedTime">Never</span></div>
+    <div>MCP Watchtower v<span id="extensionVersion">1.0.0</span></div>
+  </footer>
+
+  <script nonce="{{nonce}}" src="{{scriptUri}}"></script>
+</body>
+</html>
+

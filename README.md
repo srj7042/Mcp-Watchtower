@@ -1,2 +1,97 @@
-# Mcp-Watchtower
-Local-first MCP server monitoring extension for VS Code and Google Antigravity. Features multi-dimensional protocol health diagnostics, zero duplicate process spawning, SSRF &amp; secret protection, and a lightweight floating dashboard.
+# MCP Watchtower 🗼
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)](https://www.typescriptlang.org/)
+[![VS Code](https://img.shields.io/badge/VS%20Code-%3E%3D1.90-purple)](https://code.visualstudio.com/)
+[![Google Antigravity](https://img.shields.io/badge/Google%20Antigravity-Supported-green)](https://antigravity.google)
+
+**MCP Watchtower** is a production-oriented, local-first monitoring extension for the [Model Context Protocol (MCP)](https://modelcontextprotocol.io). Designed specifically for Visual Studio Code and Google Antigravity IDE, Watchtower verifies and presents the real operational health of configured MCP servers in a compact, floating-like dashboard and status bar.
+
+---
+
+## ✨ Features
+
+- 🔭 **Zero-Config Discovery**: Automatically discovers MCP servers from global (`~/.gemini/config/mcp_config.json`), workspace (`.agents/mcp_config.json`), and custom user paths.
+- 🚦 **Evidence-Based Multi-Dimensional Health**: Discards naive booleans. Separates `CONFIGURED`, `NETWORK_REACHABLE`, `MCP_PROTOCOL_HEALTH`, and `IDE_RUNTIME_STATUS`.
+- 🤝 **Real Protocol Handshakes**: Validates remote Streamable HTTP servers by completing real MCP initialization handshakes through the official MCP TypeScript SDK without ever executing user tools.
+- 🛡️ **Stdio Process Safety**: Zero duplicate stdio processes spawned in background polling. Verifies PATH and binary accessibility safely. Isolated diagnostic runs require explicit interactive consent.
+- 🔒 **Ironclad Security & Zero Secrets in UI**: Full SSRF protection (blocking cloud metadata endpoints like `169.254.169.254`), automatic token/password redaction, strict Content Security Policy, and zero telemetry.
+- ⚡ **Ultra-Lightweight on Apple Silicon**: Pure native TypeScript UI with zero React/Vue runtime overhead. Instant rendering (< 50ms) and minimal memory usage.
+
+---
+
+## 🧭 What Watchtower Does vs What It Cannot Detect
+
+### What Watchtower Does:
+1. **Parses & Validates MCP Config**: Validates JSON syntax, arguments, environment dictionaries, and URLs against strict security bounds.
+2. **Performs Protocol Diagnostics**: Connects to Streamable HTTP endpoints and completes initialization handshakes, extracting advertised tools, resources, and prompt counts.
+3. **Monitors Stdio Executables**: Verifies executable existence and binary permissions without duplicate process spawning.
+4. **Surfaces Live Health**: Displays verified health state (`CONNECTED`, `DEGRADED`, `DISCONNECTED`, `AUTH_REQUIRED`, `CONFIG_ERROR`, `TIMEOUT`, `UNKNOWN`) in the status bar and floating dashboard.
+
+### What Watchtower Cannot Detect (Honest Architecture Boundary):
+- **IDE Runtime Internal Agent State**: Neither VS Code core nor Antigravity exposes a third-party extension hook into active AI agent sessions or internal stdio child processes.
+- **Watchtower never fakes internal IDE state**: It explicitly surfaces IDE runtime status as `NOT_EXPOSED` rather than inventing false green lights.
+- **Process Hijacking**: Watchtower will **never** attempt to kill, attach to, or restart external processes owned by the IDE or other applications.
+
+---
+
+## 🚀 Installation
+
+### Option A: Install VSIX in Google Antigravity IDE
+```bash
+antigravity-ide --install-extension mcp-watchtower-1.0.0.vsix
+```
+
+### Option B: Install VSIX in Visual Studio Code
+```bash
+code --install-extension mcp-watchtower-1.0.0.vsix
+```
+
+---
+
+## ⚙️ Configuration & Settings
+
+Configure Watchtower via VS Code Settings (`Preferences -> Settings -> Extensions -> MCP Watchtower`):
+
+| Setting Key | Default | Description |
+|:------------|:-------:|:------------|
+| `mcpWatchtower.monitoring.enabled` | `true` | Enable periodic background health checks. |
+| `mcpWatchtower.monitoring.checkIntervalSeconds` | `60` | Interval between background checks (10s - 3600s). |
+| `mcpWatchtower.monitoring.requestTimeoutSeconds` | `8` | Timeout for diagnostic handshakes (2s - 60s). |
+| `mcpWatchtower.monitoring.maxConcurrentChecks` | `2` | Maximum concurrent diagnostic checks. |
+| `mcpWatchtower.monitoring.allowAutoStdioDiagnostic` | `false` | Disabled by default. Safety guardrail for stdio processes. |
+| `mcpWatchtower.security.allowLocalInsecureHttp` | `true` | Allow unencrypted `http://` strictly for `localhost` and `127.0.0.1`. |
+| `mcpWatchtower.security.blockCloudMetadataEndpoints` | `true` | Block requests to `169.254.169.254` and `metadata.google.internal`. |
+| `mcpWatchtower.customConfigPaths` | `[]` | Additional paths to scan for `mcp_config.json`. |
+
+---
+
+## ⌨️ Commands
+
+Access via Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`):
+
+- `MCP Watchtower: Open Dashboard` (`mcpWatchtower.openDashboard`)
+- `MCP Watchtower: Refresh All Servers` (`mcpWatchtower.refreshAll`)
+- `MCP Watchtower: Refresh Server` (`mcpWatchtower.refreshServer`)
+- `MCP Watchtower: Inspect Server Details` (`mcpWatchtower.inspectServer`)
+- `MCP Watchtower: Validate Configuration Files` (`mcpWatchtower.validateConfiguration`)
+- `MCP Watchtower: Show Diagnostics Output Channel` (`mcpWatchtower.showDiagnostics`)
+- `MCP Watchtower: Copy Sanitized Diagnostic Report` (`mcpWatchtower.copySanitizedReport`)
+- `MCP Watchtower: Toggle Periodic Monitoring` (`mcpWatchtower.toggleMonitoring`)
+- `MCP Watchtower: Run Consent-Based Diagnostic (Stdio)` (`mcpWatchtower.runConsentBasedDiagnostic`)
+
+---
+
+## 🔒 Security & Privacy Policy
+
+- **Zero Telemetry**: No analytics, tracking, or network calls beyond the user's configured MCP servers.
+- **Secret Redaction**: Bearer tokens, passwords, and sensitive keys matching security filters are replaced with `[REDACTED]`.
+- **SSRF Hardening**: Rejects cloud metadata services (`169.254.169.254`), non-HTTP schemes (`file:`, `javascript:`), and remote unencrypted HTTP.
+- **Process Isolation**: Commands are invoked with argument arrays and `shell: false` to eliminate shell injection vulnerabilities.
+
+---
+
+## 📄 License
+
+Distributed under the [MIT License](LICENSE).
+

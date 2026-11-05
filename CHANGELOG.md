@@ -5,6 +5,14 @@ All notable changes to MCP Watchtower are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-11-05
+
+### Added
+- **Interactive Server Connection Buttons**: Added instant connect/reconnect triggers in Dashboard header, per-server cards, sidebar tree actions, and command palette (`MCP Watchtower: Connect to Server...`).
+- **Full Universal Cross-Platform Support**: Robust path and executable resolution across macOS (ARM64/x64), Windows (x64/ARM64 with `PATHEXT` `.exe`/`.cmd`/`.bat` lookup), and Linux.
+- **CI/CD Multi-OS Release Pipeline**: GitHub Actions workflow running automated testing on Ubuntu, Windows, and macOS, with automated VSIX publishing on tagged releases.
+- **Comprehensive Cross-Platform Installation Guide**: Added 3-click GUI and command-line instructions for VS Code and Google Antigravity across macOS, Windows, and Linux.
+
 ## [1.0.0] - 2026-11-05
 
 ### Added

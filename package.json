@@ -2,12 +2,12 @@
   "name": "mcp-watchtower",
   "displayName": "MCP Watchtower",
   "description": "Production-oriented, local-first MCP server monitoring extension for Visual Studio Code and Google Antigravity",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "publisher": "surajjaiswal",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/surajjaiswal/mcp-watchtower.git"
+    "url": "https://github.com/srj7042/Mcp-Watchtower.git"
   },
   "engines": {
     "vscode": "^1.90.0"

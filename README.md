@@ -21,7 +21,7 @@
 ## 🚀 Simple Installation & Download
 
 ### 📥 Step 1: Download the Extension (.vsix)
-Download the latest pre-packaged **`mcp-watchtower-1.0.0.vsix`** from the GitHub Releases page:
+Download the latest pre-packaged **`mcp-watchtower-1.1.0.vsix`** from the GitHub Releases page:
 👉 **[Download Latest Release VSIX](https://github.com/srj7042/Mcp-Watchtower/releases)**
 
 ---
@@ -33,7 +33,7 @@ Download the latest pre-packaged **`mcp-watchtower-1.0.0.vsix`** from the GitHub
 1. In Google Antigravity IDE or VS Code, press **`Ctrl + Shift + X`** (or **`Cmd + Shift + X`** on macOS) to open the **Extensions** panel.
 2. Click the **`···`** (Views and More Actions) menu in the top-right corner of the Extensions panel.
 3. Select **Install from VSIX...**
-4. Select the downloaded `mcp-watchtower-1.0.0.vsix` file.
+4. Select the downloaded `mcp-watchtower-1.1.0.vsix` file.
 5. Press `Ctrl + Shift + P` (or `Cmd + Shift + P`) and run **`Developer: Reload Window`**.
 
 ---
@@ -43,30 +43,30 @@ Download the latest pre-packaged **`mcp-watchtower-1.0.0.vsix`** from the GitHub
 ##### 🍏 macOS
 ```bash
 # For Google Antigravity IDE:
-"/Applications/Antigravity IDE.app/Contents/Resources/app/bin/antigravity-ide" --install-extension mcp-watchtower-1.0.0.vsix
+"/Applications/Antigravity IDE.app/Contents/Resources/app/bin/antigravity-ide" --install-extension mcp-watchtower-1.1.0.vsix
 
 # For Visual Studio Code:
-code --install-extension mcp-watchtower-1.0.0.vsix
+code --install-extension mcp-watchtower-1.1.0.vsix
 ```
 
 ##### 🪟 Windows (PowerShell or Command Prompt)
 ```powershell
 # For Visual Studio Code:
-code --install-extension mcp-watchtower-1.0.0.vsix
+code --install-extension mcp-watchtower-1.1.0.vsix
 
 # For Google Antigravity IDE:
-& "$env:LOCALAPPDATA\Programs\Antigravity IDE\bin\antigravity-ide.cmd" --install-extension mcp-watchtower-1.0.0.vsix
+& "$env:LOCALAPPDATA\Programs\Antigravity IDE\bin\antigravity-ide.cmd" --install-extension mcp-watchtower-1.1.0.vsix
 # (Or if antigravity-ide is on your PATH:)
-antigravity-ide --install-extension mcp-watchtower-1.0.0.vsix
+antigravity-ide --install-extension mcp-watchtower-1.1.0.vsix
 ```
 
 ##### 🐧 Linux
 ```bash
 # For Visual Studio Code / VSCodium:
-code --install-extension mcp-watchtower-1.0.0.vsix
+code --install-extension mcp-watchtower-1.1.0.vsix
 
 # For Google Antigravity IDE:
-antigravity-ide --install-extension mcp-watchtower-1.0.0.vsix
+antigravity-ide --install-extension mcp-watchtower-1.1.0.vsix
 ```
 
 ---
@@ -78,7 +78,7 @@ cd Mcp-Watchtower
 npm install
 npm run package
 ```
-This produces `mcp-watchtower-1.0.0.vsix` in the directory, ready to install anywhere!
+This produces `mcp-watchtower-1.1.0.vsix` in the directory, ready to install anywhere!
 
 ---
 

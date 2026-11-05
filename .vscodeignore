@@ -11,4 +11,8 @@ vitest.config.ts
 **/*.map
 coverage/**
 docs/**
+Agents.md
+AGENTS.md
+agents.md
+*.vsix
 

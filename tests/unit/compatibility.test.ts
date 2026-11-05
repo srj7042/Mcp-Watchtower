@@ -13,7 +13,8 @@ describe('AntigravityCompatibility Probe', () => {
     expect(report.capabilities.ideProcessTakeoverSupported).toBe(false);
 
     expect(report.limitations.length).toBeGreaterThan(0);
-    expect(report.paths.globalConfigPath).toContain('.gemini/config/mcp_config.json');
+    const normalizedGlobalPath = report.paths.globalConfigPath.replace(/\\/g, '/');
+    expect(normalizedGlobalPath).toContain('.gemini/config/mcp_config.json');
   });
 });
 

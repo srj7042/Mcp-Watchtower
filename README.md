@@ -9,45 +9,76 @@
 
 ---
 
-## 🚀 Simple Installation
+## 🌍 Universal OS Compatibility
 
-### Method 1: Directly inside the IDE (Easiest — No Terminal Needed)
-1. In Antigravity IDE or VS Code, press **`Cmd + Shift + X`** (or `Ctrl + Shift + X` on Windows/Linux) to open the **Extensions** panel.
-2. Click the **`···`** (Views and More Actions) menu in the top right of the Extensions panel.
-3. Select **Install from VSIX...**
-4. Choose the [`mcp-watchtower-1.0.0.vsix`](mcp-watchtower-1.0.0.vsix) file.
-5. Press **`Cmd + Shift + P`** and run **`Developer: Reload Window`**.
-
-*You will immediately see the **`$(pulse) MCP: ...`** icon in the bottom-right status bar and the **Watchtower** icon in the left activity bar!*
+**MCP Watchtower runs on all operating systems.** It contains **zero native C++ dependencies**, bundling into pure JavaScript that executes identically across:
+- 🍏 **macOS** (Apple Silicon M1/M2/M3/M4 & Intel x86_64)
+- 🪟 **Windows** (Windows 10, Windows 11 — x64 & ARM64)
+- 🐧 **Linux** (Ubuntu, Debian, Fedora, Arch, CentOS, etc.)
 
 ---
 
-### Method 2: Via Terminal
+## 🚀 Simple Installation & Download
 
-#### For Google Antigravity IDE:
+### 📥 Step 1: Download the Extension (.vsix)
+Download the latest pre-packaged **`mcp-watchtower-1.0.0.vsix`** from the GitHub Releases page:
+👉 **[Download Latest Release VSIX](https://github.com/srj7042/Mcp-Watchtower/releases)**
+
+---
+
+### 💻 Step 2: Install on Your IDE
+
+#### Method A: Directly inside the IDE GUI (Recommended for All OS)
+*Works on macOS, Windows, and Linux without touching the terminal:*
+1. In Google Antigravity IDE or VS Code, press **`Ctrl + Shift + X`** (or **`Cmd + Shift + X`** on macOS) to open the **Extensions** panel.
+2. Click the **`···`** (Views and More Actions) menu in the top-right corner of the Extensions panel.
+3. Select **Install from VSIX...**
+4. Select the downloaded `mcp-watchtower-1.0.0.vsix` file.
+5. Press `Ctrl + Shift + P` (or `Cmd + Shift + P`) and run **`Developer: Reload Window`**.
+
+---
+
+#### Method B: Via Terminal / Command Line
+
+##### 🍏 macOS
 ```bash
-# If antigravity-ide is in your PATH:
-antigravity-ide --install-extension mcp-watchtower-1.0.0.vsix
-
-# Or directly using the macOS app binary:
+# For Google Antigravity IDE:
 "/Applications/Antigravity IDE.app/Contents/Resources/app/bin/antigravity-ide" --install-extension mcp-watchtower-1.0.0.vsix
-```
 
-#### For Visual Studio Code:
-```bash
+# For Visual Studio Code:
 code --install-extension mcp-watchtower-1.0.0.vsix
 ```
 
+##### 🪟 Windows (PowerShell or Command Prompt)
+```powershell
+# For Visual Studio Code:
+code --install-extension mcp-watchtower-1.0.0.vsix
+
+# For Google Antigravity IDE:
+& "$env:LOCALAPPDATA\Programs\Antigravity IDE\bin\antigravity-ide.cmd" --install-extension mcp-watchtower-1.0.0.vsix
+# (Or if antigravity-ide is on your PATH:)
+antigravity-ide --install-extension mcp-watchtower-1.0.0.vsix
+```
+
+##### 🐧 Linux
+```bash
+# For Visual Studio Code / VSCodium:
+code --install-extension mcp-watchtower-1.0.0.vsix
+
+# For Google Antigravity IDE:
+antigravity-ide --install-extension mcp-watchtower-1.0.0.vsix
+```
+
 ---
 
-### Method 3: Build & Install from Source
+#### Method C: Build & Package from Source (Any OS)
 ```bash
 git clone https://github.com/srj7042/Mcp-Watchtower.git
 cd Mcp-Watchtower
 npm install
 npm run package
 ```
-This generates `mcp-watchtower-1.0.0.vsix` in the project root.
+This produces `mcp-watchtower-1.0.0.vsix` in the directory, ready to install anywhere!
 
 ---
 

@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import {
   StdioClientTransport,
@@ -31,40 +32,70 @@ export class StdioDiagnostics {
     }
 
     const trimmed = command.trim();
+    if (/[\r\n;&|`$]/.test(trimmed)) {
+      return { found: false, error: 'Command contains invalid shell characters' };
+    }
+
+    const isWindows = process.platform === 'win32';
+    const pathext = (process.env.PATHEXT || '.COM;.EXE;.BAT;.CMD')
+      .split(';')
+      .filter(Boolean)
+      .map((e) => e.toLowerCase());
+
+    const extensionsToCheck = isWindows
+      ? (path.extname(trimmed) ? [''] : ['', ...pathext])
+      : [''];
 
     // 1. Direct path check (if absolute or relative path)
     if (trimmed.includes('/') || trimmed.includes('\\')) {
-      try {
-        const resolved = path.resolve(trimmed);
-        fs.accessSync(resolved, fs.constants.X_OK);
-        return { found: true, resolvedPath: resolved };
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        return { found: false, error: `Executable not accessible at path "${trimmed}": ${msg}` };
+      const resolved = path.resolve(trimmed);
+      for (const ext of extensionsToCheck) {
+        const fullCandidate = isWindows && ext ? resolved + ext : resolved;
+        try {
+          if (fs.existsSync(fullCandidate)) {
+            if (!isWindows) {
+              fs.accessSync(fullCandidate, fs.constants.X_OK);
+            }
+            return { found: true, resolvedPath: fullCandidate };
+          }
+        } catch {
+          // Continue searching
+        }
       }
+      return { found: false, error: `Executable not accessible at path "${trimmed}"` };
     }
 
     // 2. PATH resolution
-    const systemPath = process.env.PATH || '';
-    // Include standard Homebrew / Mac paths in search
+    const systemPath = process.env.PATH || (isWindows ? process.env.Path : '') || '';
+    const extraPaths = isWindows
+      ? []
+      : [
+          '/opt/homebrew/bin',
+          '/usr/local/bin',
+          '/usr/bin',
+          '/bin',
+          path.join(os.homedir(), '.cargo', 'bin'),
+          path.join(os.homedir(), '.local', 'bin'),
+        ];
+
     const paths = [
       ...systemPath.split(path.delimiter),
-      '/opt/homebrew/bin',
-      '/usr/local/bin',
-      '/usr/bin',
-      '/bin',
-    ];
+      ...extraPaths,
+    ].filter(Boolean);
 
     for (const dir of paths) {
-      if (!dir) continue;
-      const candidate = path.join(dir, trimmed);
-      try {
-        if (fs.existsSync(candidate)) {
-          fs.accessSync(candidate, fs.constants.X_OK);
-          return { found: true, resolvedPath: candidate };
+      for (const ext of extensionsToCheck) {
+        const candidate = isWindows && ext ? path.join(dir, trimmed + ext) : path.join(dir, trimmed);
+        try {
+          if (fs.existsSync(candidate)) {
+            if (!isWindows) {
+              fs.accessSync(candidate, fs.constants.X_OK);
+            }
+            return { found: true, resolvedPath: candidate };
+          }
+        } catch {
+          // Continue searching
         }
-      } catch {
-        // Continue searching
       }
     }
 
@@ -97,12 +128,28 @@ export class StdioDiagnostics {
     }
 
     const commandToRun = binaryCheck.resolvedPath || options.command;
-    const safeEnv = {
+    const isWindows = process.platform === 'win32';
+    const currentPath = process.env.PATH || (isWindows ? process.env.Path : '') || '';
+    const extraPaths = isWindows
+      ? []
+      : [
+          '/opt/homebrew/bin',
+          '/usr/local/bin',
+          '/usr/bin',
+          '/bin',
+          path.join(os.homedir(), '.cargo', 'bin'),
+          path.join(os.homedir(), '.local', 'bin'),
+        ];
+    const mergedPath = [...extraPaths, currentPath].filter(Boolean).join(path.delimiter);
+
+    const safeEnv: Record<string, string> = {
       ...getDefaultEnvironment(),
       ...(options.env || {}),
-      // Ensure PATH includes homebrew
-      PATH: `/opt/homebrew/bin:/usr/local/bin:${process.env.PATH || ''}`,
     };
+    safeEnv.PATH = mergedPath;
+    if (isWindows) {
+      safeEnv.Path = mergedPath;
+    }
 
     let transport: StdioClientTransport | undefined;
     let client: Client | undefined;

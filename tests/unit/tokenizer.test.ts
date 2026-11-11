@@ -8,6 +8,7 @@ describe('LocalTokenizer', () => {
     expect(LocalTokenizer.resolveModelFamily('o1-mini')).toBe('GPT');
     expect(LocalTokenizer.resolveModelFamily('claude-3-7-sonnet-20250219')).toBe('CLAUDE');
     expect(LocalTokenizer.resolveModelFamily('gemini-2.0-flash-exp')).toBe('GEMINI');
+    expect(LocalTokenizer.resolveModelFamily('gemini-3.8-flash')).toBe('GEMINI');
     expect(LocalTokenizer.resolveModelFamily('deepseek-coder-v2')).toBe('LLAMA');
     expect(LocalTokenizer.resolveModelFamily('custom-unknown-model')).toBe('GENERIC');
     expect(LocalTokenizer.resolveModelFamily()).toBe('GENERIC');
@@ -63,6 +64,19 @@ describe('PricingEngine', () => {
     expect(res.outputCostUsd).toBeCloseTo(0.10, 4);
     expect(res.totalCostUsd).toBeCloseTo(0.35, 4);
     expect(res.isCustomRate).toBe(false);
+  });
+
+  it('calculates pricing for Gemini 3.8 Flash model tier', () => {
+    // Gemini 3.8 Flash: $0.10 / M input, $0.40 / M output, $0.025 / M cached input
+    const res = engine.calculateCost('gemini-3.8-flash', 1_000_000, 100_000, 500_000);
+    // 500k regular input: 500k * 0.10 / 1M = $0.05
+    // 500k cached input: 500k * 0.025 / 1M = $0.0125
+    // 100k output: 100k * 0.40 / 1M = $0.04
+    // total: 0.05 + 0.0125 + 0.04 = $0.1025
+    expect(res.inputCostUsd).toBeCloseTo(0.05, 4);
+    expect(res.cachedCostUsd).toBeCloseTo(0.0125, 4);
+    expect(res.outputCostUsd).toBeCloseTo(0.04, 4);
+    expect(res.totalCostUsd).toBeCloseTo(0.1025, 4);
   });
 
   it('accounts for cached tokens at lower rate', () => {

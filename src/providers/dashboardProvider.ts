@@ -7,6 +7,7 @@ import { EventBus } from '../core/eventBus.js';
 import { HealthMonitor } from '../monitoring/healthMonitor.js';
 import { ServerDiscoveryService } from '../services/serverDiscoveryService.js';
 import { AgentManagerService } from '../services/agentManagerService.js';
+import { GenericInputAdapter } from '../adapters/agent/implementations/genericInputAdapter.js';
 import { SqliteStorage } from '../storage/sqliteStorage.js';
 import {
   DashboardViewModel,
@@ -23,7 +24,7 @@ export class DashboardProvider implements IDisposable {
   private disposables: vscode.Disposable[] = [];
   private eventDisposables: IDisposable[] = [];
   private activeTab: string = 'overview';
-  private targetModel: string = 'gpt-4o';
+  private targetModel: string = 'gemini-3.8-flash';
   private updateThrottleTimer: NodeJS.Timeout | null = null;
 
   constructor(
@@ -126,6 +127,11 @@ export class DashboardProvider implements IDisposable {
         break;
       case 'setTargetModel':
         this.targetModel = message.model;
+        if (this.agentManager) {
+          const genericAdapter = this.agentManager.getAdapter('generic-input-adapter') as GenericInputAdapter | undefined;
+          genericAdapter?.setTargetModel(this.targetModel);
+        }
+        this.postStateUpdate();
         break;
       case 'clearHistory':
         this.postStateUpdate();

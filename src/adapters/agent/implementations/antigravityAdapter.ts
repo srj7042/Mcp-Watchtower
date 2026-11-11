@@ -14,6 +14,10 @@ interface TranscriptStep {
   status?: string;
   duration_ms?: number;
   error?: string;
+  model?: string;
+  input_tokens?: number;
+  output_tokens?: number;
+  cache_read_tokens?: number;
   tool_calls?: Array<{
     name?: string;
     tool_name?: string;
@@ -30,12 +34,27 @@ interface TranscriptStep {
   };
 }
 
+function normalizeAntigravityModel(raw: string): string {
+  const s = raw.toLowerCase().trim();
+  if (s.includes('3.8') && s.includes('flash')) return 'gemini-3.8-flash';
+  if ((s.includes('3.0') || s.includes('3-0') || s.includes('3.')) && s.includes('flash')) return 'gemini-3.0-flash';
+  if (s.includes('2.0') && s.includes('flash')) return 'gemini-2.0-flash';
+  if (s.includes('1.5') && s.includes('flash')) return 'gemini-1.5-flash';
+  if (s.includes('1.5') && s.includes('pro')) return 'gemini-1.5-pro';
+  if (s.includes('pro')) return 'gemini-1.5-pro';
+  if (s.includes('flash')) return 'gemini-3.8-flash';
+  if (s.includes('opus')) return 'claude-3-opus';
+  if (s.includes('claude')) return 'claude-3-7-sonnet';
+  return 'gemini-3.8-flash';
+}
+
 export class AntigravityAdapter extends BaseAgentAdapter {
   private transcriptWatchers: fs.FSWatcher[] = [];
   private currentSessionId: string = `antigravity_${Date.now()}`;
   private lastProcessedLineCount: Map<string, number> = new Map();
   private scanInterval: NodeJS.Timeout | null = null;
   private readonly brainBaseDir: string;
+  private activeModel: string = 'gemini-3.8-flash';
 
   public static readonly DEFINITION: AgentDefinition = {
     id: 'antigravity-adapter',
@@ -66,7 +85,7 @@ export class AntigravityAdapter extends BaseAgentAdapter {
   public async initialize(): Promise<void> {
     if (this.isInitialized) return;
 
-    this.emitSession(this.currentSessionId, 'ACTIVE', 'gemini-2.0-flash', {
+    this.emitSession(this.currentSessionId, 'ACTIVE', this.activeModel, {
       runtime: 'Google Antigravity IDE',
       brainPath: this.brainBaseDir,
     });
@@ -128,7 +147,19 @@ export class AntigravityAdapter extends BaseAgentAdapter {
   }
 
   private handleTranscriptStep(conversationId: string, step: TranscriptStep): void {
-    const model = 'gemini-2.0-flash';
+    // 1. Detect dynamic model changes in transcript
+    if (typeof step.content === 'string') {
+      const match = step.content.match(/Model Selection`?\s+from\s+.*?to\s+([^.<)\n]+)/i);
+      if (match && match[1]) {
+        this.activeModel = normalizeAntigravityModel(match[1]);
+        this.logger.info(`Antigravity active model updated to: ${this.activeModel}`);
+      }
+    }
+    if (step.model) {
+      this.activeModel = normalizeAntigravityModel(step.model);
+    }
+
+    const model = this.activeModel;
 
     if (step.type === 'USER_INPUT') {
       const promptText = typeof step.content === 'string' ? step.content : '';
@@ -171,19 +202,24 @@ export class AntigravityAdapter extends BaseAgentAdapter {
         }
       }
 
-      // Handle token metrics if available in step metadata
-      if (step.token_usage) {
+      // Handle token metrics if available in step metadata or direct step properties
+      const promptTok = step.token_usage?.prompt_tokens ?? step.input_tokens ?? 0;
+      const compTok = step.token_usage?.completion_tokens ?? step.output_tokens ?? 0;
+      const cachedTok = step.token_usage?.cached_tokens ?? step.cache_read_tokens ?? 0;
+      const totalTok = step.token_usage?.total_tokens ?? (promptTok + compTok);
+
+      if (promptTok > 0 || compTok > 0 || step.token_usage) {
         this.emitTokenUsage(
           conversationId,
           model,
           'REPORTED_ACTUAL',
           'EXACT',
-          step.token_usage.prompt_tokens || 0,
-          step.token_usage.completion_tokens || 0,
-          step.token_usage.total_tokens || 0,
+          promptTok,
+          compTok,
+          totalTok,
           {
             executionId: execId,
-            cachedTokens: step.token_usage.cached_tokens || 0,
+            cachedTokens: cachedTok,
           }
         );
       }

@@ -50,12 +50,16 @@ function estimateTokensClient(text: string, _model?: string): number {
 
 function calculateCostClient(tokens: number, model: string): number {
   let ratePerMillion = 2.50; // default GPT-4o
-  if (model.includes('gpt-4o-mini')) ratePerMillion = 0.15;
-  else if (model.includes('claude-3-7')) ratePerMillion = 3.00;
-  else if (model.includes('claude-3-5-haiku')) ratePerMillion = 0.80;
-  else if (model.includes('gemini-2.0-flash')) ratePerMillion = 0.10;
-  else if (model.includes('gemini-1.5-pro')) ratePerMillion = 1.25;
-  else if (model.includes('deepseek')) ratePerMillion = 0.14;
+  const m = model.toLowerCase();
+  if (m.includes('gpt-4o-mini')) ratePerMillion = 0.15;
+  else if (m.includes('o1-mini')) ratePerMillion = 3.00;
+  else if (m.includes('o1')) ratePerMillion = 15.00;
+  else if (m.includes('claude-3-7') || m.includes('claude-3-5-sonnet')) ratePerMillion = 3.00;
+  else if (m.includes('claude-3-5-haiku')) ratePerMillion = 0.80;
+  else if (m.includes('opus')) ratePerMillion = 15.00;
+  else if (m.includes('gemini') && m.includes('flash')) ratePerMillion = 0.10;
+  else if (m.includes('gemini') && m.includes('pro')) ratePerMillion = 1.25;
+  else if (m.includes('deepseek')) ratePerMillion = 0.14;
   return (tokens / 1_000_000) * ratePerMillion;
 }
 
@@ -103,7 +107,7 @@ function initDashboard(): void {
 
   function updateLiveMeter(): void {
     const text = draftArea?.value || '';
-    const model = modelPicker?.value || 'gpt-4o';
+    const model = modelPicker?.value || 'gemini-3.8-flash';
     const draftTokens = estimateTokensClient(text, model);
     const requestTokens = draftTokens > 0 ? draftTokens + 45 : 0; // Simulated context overhead
     const cost = calculateCostClient(draftTokens, model);
@@ -118,17 +122,28 @@ function initDashboard(): void {
 
     // Update Context Window Progress Bar
     const contextLimits: Record<string, number> = {
+      'gemini-3.8-flash': 1000000,
+      'gemini-3.0-flash': 1000000,
+      'gemini-2.0-flash': 1000000,
+      'gemini-1.5-flash': 1000000,
+      'gemini-1.5-pro': 2000000,
       'gpt-4o': 128000,
       'gpt-4o-mini': 128000,
       'o1': 200000,
       'claude-3-7-sonnet': 200000,
       'claude-3-5-sonnet': 200000,
       'claude-3-5-haiku': 200000,
-      'gemini-2.0-flash': 1000000,
-      'gemini-1.5-pro': 2000000,
+      'claude-3-opus': 200000,
       'deepseek': 64000,
     };
-    const maxLimit = contextLimits[model] || 128000;
+    let maxLimit = contextLimits[model];
+    if (!maxLimit) {
+      const m = model.toLowerCase();
+      if (m.includes('gemini') && m.includes('pro')) maxLimit = 2000000;
+      else if (m.includes('gemini')) maxLimit = 1000000;
+      else if (m.includes('claude') || m.includes('o1')) maxLimit = 200000;
+      else maxLimit = 128000;
+    }
     const usedTokens = requestTokens > 0 ? requestTokens : draftTokens;
     const percent = Math.min(100, (usedTokens / maxLimit) * 100);
 
@@ -266,6 +281,24 @@ function updateUI(): void {
     // Render Overview lists
     renderOverviewAgents(observability.adapters);
     renderOverviewEvents(observability.recentEvents);
+
+    // Sync Target Model picker if updated from backend
+    if (observability.liveTokens?.targetModel) {
+      const target = observability.liveTokens.targetModel;
+      const picker = document.getElementById('selectModel') as HTMLSelectElement | null;
+      if (picker && picker.value !== target) {
+        const optionExists = Array.from(picker.options).some((o) => o.value === target);
+        if (optionExists) {
+          picker.value = target;
+        } else {
+          const opt = document.createElement('option');
+          opt.value = target;
+          opt.textContent = target;
+          opt.selected = true;
+          picker.appendChild(opt);
+        }
+      }
+    }
 
     // Render Agent Monitor tab
     renderAgentCards(observability.adapters);

@@ -77,13 +77,27 @@ export class PricingEngine {
       cachedInputPerMillion: 0.08,
     },
     {
-      modelPattern: /claude-3-opus/i,
-      displayName: 'Claude 3 Opus',
+      modelPattern: /claude-(?:3-)?opus(?:-4\.6)?/i,
+      displayName: 'Claude Opus',
       inputPerMillion: 15.00,
       outputPerMillion: 75.00,
       cachedInputPerMillion: 1.50,
     },
     // Google Gemini Models
+    {
+      modelPattern: /gemini-3\.8-flash/i,
+      displayName: 'Gemini 3.8 Flash',
+      inputPerMillion: 0.10,
+      outputPerMillion: 0.40,
+      cachedInputPerMillion: 0.025,
+    },
+    {
+      modelPattern: /gemini-3(?:\.0)?-flash|gemini-3-flash/i,
+      displayName: 'Gemini 3.0 Flash',
+      inputPerMillion: 0.10,
+      outputPerMillion: 0.40,
+      cachedInputPerMillion: 0.025,
+    },
     {
       modelPattern: /gemini-2\.0-flash/i,
       displayName: 'Gemini 2.0 Flash',
@@ -101,6 +115,20 @@ export class PricingEngine {
     {
       modelPattern: /gemini-1\.5-pro/i,
       displayName: 'Gemini 1.5 Pro',
+      inputPerMillion: 1.25,
+      outputPerMillion: 5.00,
+      cachedInputPerMillion: 0.3125,
+    },
+    {
+      modelPattern: /gemini.*flash/i,
+      displayName: 'Gemini Flash',
+      inputPerMillion: 0.10,
+      outputPerMillion: 0.40,
+      cachedInputPerMillion: 0.025,
+    },
+    {
+      modelPattern: /gemini.*pro/i,
+      displayName: 'Gemini Pro',
       inputPerMillion: 1.25,
       outputPerMillion: 5.00,
       cachedInputPerMillion: 0.3125,

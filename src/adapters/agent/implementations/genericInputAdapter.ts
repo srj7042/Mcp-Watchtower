@@ -10,7 +10,7 @@ export class GenericInputAdapter extends BaseAgentAdapter {
   private documentSubscription?: IDisposable;
   private debounceTimer: NodeJS.Timeout | null = null;
   private currentSessionId: string = `draft_${Date.now()}`;
-  private targetModel: string = 'gpt-4o';
+  private targetModel: string = 'gemini-3.8-flash';
 
   public static readonly DEFINITION: AgentDefinition = {
     id: 'generic-input-adapter',

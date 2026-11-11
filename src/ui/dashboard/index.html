@@ -84,6 +84,7 @@
 
   <!-- ==================== TAB 2: MCP SERVERS (100% PRESERVED) ==================== -->
   <section id="tab-mcp" class="tab-pane">
+    <!-- Summary Cards -->
     <div class="summary-bar">
       <div class="summary-card">
         <div id="summaryTotal" class="count">0</div>
@@ -104,6 +105,17 @@
       <div class="summary-card unknown">
         <div id="summaryUnknown" class="count">0</div>
         <div class="label">Pending/Unknown</div>
+      </div>
+    </div>
+
+    <!-- MCP Health Progress Bar -->
+    <div class="progress-container">
+      <div class="progress-labels">
+        <span>MCP Server Fleet Operational Health</span>
+        <span id="mcpHealthPercentLabel">0% Operational</span>
+      </div>
+      <div class="progress-bar-track">
+        <div id="mcpHealthProgressBar" class="progress-bar-fill healthy" style="width: 0%;"></div>
       </div>
     </div>
 
@@ -170,6 +182,17 @@
         <textarea id="liveDraftInput" class="draft-textarea" placeholder="Start typing here or edit code in the active editor to watch token estimates update in real-time..."></textarea>
       </div>
 
+      <!-- Live Context Capacity Progress Bar -->
+      <div class="progress-container context-meter">
+        <div class="progress-labels">
+          <span>Context Window Utilization (<span id="modelContextLimit">128,000</span> max tokens)</span>
+          <span id="contextPercentLabel">0.00%</span>
+        </div>
+        <div class="progress-bar-track">
+          <div id="contextProgressBar" class="progress-bar-fill healthy" style="width: 0%;"></div>
+        </div>
+      </div>
+
       <div class="token-distinction-banner">
         <strong>Strict Separation Guarantee:</strong>
         <span>Draft Estimates (in-flight typing)</span> ≠
@@ -201,6 +224,19 @@
         <div class="metrics-row">
           <span>Verified Actual Usage:</span>
           <strong id="analyticsActualTotal">0</strong>
+        </div>
+
+        <!-- Stacked Token Bar -->
+        <div class="progress-container" style="margin-top: 12px;">
+          <div class="progress-labels">
+            <span>Class Distribution:</span>
+            <span id="classDistributionLabel">0% Verified</span>
+          </div>
+          <div class="stacked-bar-track">
+            <div id="barDraftFill" class="stacked-bar-fill draft" style="width: 0%;" title="Draft Tokens"></div>
+            <div id="barRequestFill" class="stacked-bar-fill request" style="width: 0%;" title="Request Estimates"></div>
+            <div id="barActualFill" class="stacked-bar-fill actual" style="width: 0%;" title="Verified Actuals"></div>
+          </div>
         </div>
       </div>
       <div class="analytics-card">

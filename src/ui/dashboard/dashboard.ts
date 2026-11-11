@@ -115,6 +115,33 @@ function initDashboard(): void {
     if (meterDraftEl) meterDraftEl.textContent = String(draftTokens);
     if (meterRequestEl) meterRequestEl.textContent = String(requestTokens);
     if (meterCostEl) meterCostEl.textContent = `$${cost.toFixed(6)}`;
+
+    // Update Context Window Progress Bar
+    const contextLimits: Record<string, number> = {
+      'gpt-4o': 128000,
+      'gpt-4o-mini': 128000,
+      'o1': 200000,
+      'claude-3-7-sonnet': 200000,
+      'claude-3-5-sonnet': 200000,
+      'claude-3-5-haiku': 200000,
+      'gemini-2.0-flash': 1000000,
+      'gemini-1.5-pro': 2000000,
+      'deepseek': 64000,
+    };
+    const maxLimit = contextLimits[model] || 128000;
+    const usedTokens = requestTokens > 0 ? requestTokens : draftTokens;
+    const percent = Math.min(100, (usedTokens / maxLimit) * 100);
+
+    const limitEl = document.getElementById('modelContextLimit');
+    const percentEl = document.getElementById('contextPercentLabel');
+    const barEl = document.getElementById('contextProgressBar');
+
+    if (limitEl) limitEl.textContent = maxLimit.toLocaleString();
+    if (percentEl) percentEl.textContent = `${percent.toFixed(2)}%`;
+    if (barEl) {
+      barEl.style.width = `${Math.max(usedTokens > 0 ? 1 : 0, percent)}%`;
+      barEl.className = `progress-bar-fill ${percent > 85 ? 'error' : percent > 60 ? 'degraded' : 'healthy'}`;
+    }
   }
 
   draftArea?.addEventListener('input', updateLiveMeter);
@@ -179,6 +206,18 @@ function updateUI(): void {
   if (degradedEl) degradedEl.textContent = String(summary.degraded);
   if (errorEl) errorEl.textContent = String(summary.disconnected);
   if (unknownEl) unknownEl.textContent = String(summary.unknown);
+
+  // Update MCP Fleet Health Progress Bar
+  const mcpPercent = summary.total > 0 ? Math.round((summary.healthy / summary.total) * 100) : 0;
+  const mcpBar = document.getElementById('mcpHealthProgressBar');
+  const mcpLabel = document.getElementById('mcpHealthPercentLabel');
+  if (mcpBar) {
+    mcpBar.style.width = `${mcpPercent}%`;
+    mcpBar.className = `progress-bar-fill ${mcpPercent >= 80 ? 'healthy' : mcpPercent >= 50 ? 'degraded' : 'error'}`;
+  }
+  if (mcpLabel) {
+    mcpLabel.textContent = `${mcpPercent}% Operational (${summary.healthy}/${summary.total} Healthy)`;
+  }
 
   // 2. Update monitoring badge
   const badgeEl = document.getElementById('monitoringBadge');
@@ -333,6 +372,25 @@ function renderTokenAnalytics(obs: AgentObservabilityViewModel): void {
   if (draftTotalEl) draftTotalEl.textContent = String(obs.tokenSummary.totalDraftTokens);
   if (requestTotalEl) requestTotalEl.textContent = String(obs.tokenSummary.totalRequestTokens);
   if (actualTotalEl) actualTotalEl.textContent = String(obs.tokenSummary.totalActualTokens);
+
+  // Update Stacked Token Class Bar
+  const d = obs.tokenSummary.totalDraftTokens;
+  const r = obs.tokenSummary.totalRequestTokens;
+  const a = obs.tokenSummary.totalActualTokens;
+  const sum = d + r + a;
+  const dPct = sum > 0 ? (d / sum) * 100 : 0;
+  const rPct = sum > 0 ? (r / sum) * 100 : 0;
+  const aPct = sum > 0 ? (a / sum) * 100 : 0;
+
+  const barDraft = document.getElementById('barDraftFill');
+  const barReq = document.getElementById('barRequestFill');
+  const barAct = document.getElementById('barActualFill');
+  const classLabel = document.getElementById('classDistributionLabel');
+
+  if (barDraft) barDraft.style.width = `${dPct}%`;
+  if (barReq) barReq.style.width = `${rPct}%`;
+  if (barAct) barAct.style.width = `${aPct}%`;
+  if (classLabel) classLabel.textContent = `${aPct.toFixed(1)}% Verified Actuals`;
 
   if (modelListEl) {
     modelListEl.innerHTML = '';

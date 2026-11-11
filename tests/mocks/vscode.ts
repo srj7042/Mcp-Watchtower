@@ -25,6 +25,8 @@ export class RelativePattern {
 }
 
 export const window = {
+  activeTextEditor: undefined as unknown,
+  onDidChangeActiveTextEditor: () => ({ dispose: () => {} }),
   createStatusBarItem: () => ({
     text: '',
     tooltip: '',
@@ -64,6 +66,7 @@ export const window = {
 
 export const workspace = {
   workspaceFolders: [],
+  onDidChangeTextDocument: () => ({ dispose: () => {} }),
   createFileSystemWatcher: () => ({
     onDidChange: () => ({ dispose: () => {} }),
     onDidCreate: () => ({ dispose: () => {} }),

@@ -6,10 +6,13 @@ import { Application } from '../core/application.js';
 import { EventBus } from '../core/eventBus.js';
 import { HealthMonitor } from '../monitoring/healthMonitor.js';
 import { ServerDiscoveryService } from '../services/serverDiscoveryService.js';
+import { AgentManagerService } from '../services/agentManagerService.js';
+import { SqliteStorage } from '../storage/sqliteStorage.js';
 import {
   DashboardViewModel,
   HostToWebviewMessage,
   WebviewToHostMessage,
+  AgentObservabilityViewModel,
 } from '../ui/messages/types.js';
 import { IDisposable } from '../utils/disposable.js';
 import { ILogger, defaultLogger } from '../utils/logger.js';
@@ -19,6 +22,9 @@ export class DashboardProvider implements IDisposable {
   private panel?: vscode.WebviewPanel;
   private disposables: vscode.Disposable[] = [];
   private eventDisposables: IDisposable[] = [];
+  private activeTab: string = 'overview';
+  private targetModel: string = 'gpt-4o';
+  private updateThrottleTimer: NodeJS.Timeout | null = null;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -26,6 +32,8 @@ export class DashboardProvider implements IDisposable {
     private readonly eventBus: EventBus,
     private readonly discovery: ServerDiscoveryService,
     private readonly healthMonitor: HealthMonitor,
+    private readonly agentManager?: AgentManagerService,
+    private readonly storage?: SqliteStorage,
     private readonly logger: ILogger = defaultLogger
   ) {
     this.setupListeners();
@@ -33,9 +41,10 @@ export class DashboardProvider implements IDisposable {
 
   private setupListeners(): void {
     this.eventDisposables.push(
-      this.eventBus.on('health:updated', () => this.postStateUpdate()),
-      this.eventBus.on('servers:synced', () => this.postStateUpdate()),
-      this.eventBus.on('monitoring:toggled', () => this.postStateUpdate())
+      this.eventBus.on('health:updated', () => this.postStateUpdateThrottled()),
+      this.eventBus.on('servers:synced', () => this.postStateUpdateThrottled()),
+      this.eventBus.on('monitoring:toggled', () => this.postStateUpdateThrottled()),
+      this.eventBus.on('observability:event', () => this.postStateUpdateThrottled())
     );
   }
 
@@ -48,7 +57,7 @@ export class DashboardProvider implements IDisposable {
 
     this.panel = vscode.window.createWebviewPanel(
       DashboardProvider.viewType,
-      'MCP Watchtower',
+      'MCP Watchtower & Agent Observability',
       vscode.ViewColumn.Beside,
       {
         enableScripts: true,
@@ -89,6 +98,10 @@ export class DashboardProvider implements IDisposable {
         break;
       case 'refreshAll':
         await this.app.refreshAll();
+        if (this.agentManager) {
+          await this.agentManager.checkAllHealth();
+        }
+        this.postStateUpdate();
         break;
       case 'refreshServer':
         await this.app.refreshServer(message.serverId);
@@ -108,7 +121,24 @@ export class DashboardProvider implements IDisposable {
       case 'openSettings':
         vscode.commands.executeCommand('workbench.action.openSettings', 'mcpWatchtower');
         break;
+      case 'changeTab':
+        this.activeTab = message.tab;
+        break;
+      case 'setTargetModel':
+        this.targetModel = message.model;
+        break;
+      case 'clearHistory':
+        this.postStateUpdate();
+        break;
     }
+  }
+
+  private postStateUpdateThrottled(): void {
+    if (this.updateThrottleTimer) return;
+    this.updateThrottleTimer = setTimeout(() => {
+      this.updateThrottleTimer = null;
+      this.postStateUpdate();
+    }, 100);
   }
 
   public postStateUpdate(): void {
@@ -120,6 +150,36 @@ export class DashboardProvider implements IDisposable {
       payload: viewModel,
     };
     this.panel.webview.postMessage(msg);
+  }
+
+  private buildObservabilityModel(): AgentObservabilityViewModel {
+    const obsState = this.agentManager?.getObservabilityState();
+    const sessions = this.storage ? this.storage.getAllSessions(25) : [];
+    const recentEvents = this.storage ? this.storage.getRecentEvents(30) : [];
+    const tokenSummary = this.storage ? this.storage.getTokenUsageSummary() : {
+      totalDraftTokens: 0,
+      totalRequestTokens: 0,
+      totalActualTokens: 0,
+      totalCostUsd: 0,
+      byModel: {},
+    };
+
+    return {
+      adapters: obsState?.adapters || [],
+      liveTokens: {
+        draftTokens: tokenSummary.totalDraftTokens,
+        requestTokens: tokenSummary.totalRequestTokens,
+        actualTokens: tokenSummary.totalActualTokens,
+        targetModel: this.targetModel,
+      },
+      tokenSummary,
+      sessions,
+      recentEvents,
+      privacy: {
+        optInPromptCapture: false,
+        localProcessingOnly: true,
+      },
+    };
   }
 
   public buildViewModel(): DashboardViewModel {
@@ -166,7 +226,9 @@ export class DashboardProvider implements IDisposable {
       },
       monitoringEnabled: this.healthMonitor.isMonitoringEnabled(),
       lastRefreshed: new Date().toISOString(),
-      version: '1.0.0',
+      version: '1.2.0',
+      activeTab: this.activeTab,
+      observability: this.agentManager ? this.buildObservabilityModel() : undefined,
     };
   }
 
@@ -178,7 +240,6 @@ export class DashboardProvider implements IDisposable {
     try {
       template = fs.readFileSync(htmlPath, 'utf8');
     } catch {
-      // Fallback if dist/ui not yet populated
       template = `<!DOCTYPE html><html><body><h3>Dashboard Assets Loading...</h3></body></html>`;
       return template;
     }
@@ -200,6 +261,10 @@ export class DashboardProvider implements IDisposable {
   }
 
   public dispose(): void {
+    if (this.updateThrottleTimer) {
+      clearTimeout(this.updateThrottleTimer);
+      this.updateThrottleTimer = null;
+    }
     if (this.panel) {
       this.panel.dispose();
       this.panel = undefined;
@@ -214,4 +279,3 @@ export class DashboardProvider implements IDisposable {
     this.eventDisposables = [];
   }
 }
-

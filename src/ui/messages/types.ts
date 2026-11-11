@@ -1,6 +1,9 @@
 import { McpServerDefinition } from '../../models/server.js';
 import { McpHealthRecord } from '../../models/health.js';
 import { McpCapabilities, McpDiagnosticEvent } from '../../models/diagnostics.js';
+import { ObservabilityEvent } from '../../observability/events.js';
+import { AgentSessionRecord, AgentCapabilities } from '../../models/agent.js';
+import { TokenUsageSummary } from '../../storage/sqliteStorage.js';
 
 export type WebviewToHostMessage =
   | { command: 'refreshAll' }
@@ -10,6 +13,9 @@ export type WebviewToHostMessage =
   | { command: 'copyReport'; serverId?: string }
   | { command: 'toggleMonitoring' }
   | { command: 'openSettings' }
+  | { command: 'changeTab'; tab: string }
+  | { command: 'setTargetModel'; model: string }
+  | { command: 'clearHistory' }
   | { command: 'ready' };
 
 export interface ServerViewModel {
@@ -17,6 +23,32 @@ export interface ServerViewModel {
   health?: McpHealthRecord;
   capabilities?: McpCapabilities;
   history?: McpDiagnosticEvent[];
+}
+
+export interface AdapterViewModel {
+  id: string;
+  name: string;
+  vendor: string;
+  status: string;
+  capabilities: AgentCapabilities;
+  healthMessage?: string;
+}
+
+export interface AgentObservabilityViewModel {
+  adapters: AdapterViewModel[];
+  liveTokens: {
+    draftTokens: number;
+    requestTokens: number;
+    actualTokens: number;
+    targetModel: string;
+  };
+  tokenSummary: TokenUsageSummary;
+  sessions: AgentSessionRecord[];
+  recentEvents: ObservabilityEvent[];
+  privacy: {
+    optInPromptCapture: boolean;
+    localProcessingOnly: boolean;
+  };
 }
 
 export interface DashboardViewModel {
@@ -31,10 +63,13 @@ export interface DashboardViewModel {
   monitoringEnabled: boolean;
   lastRefreshed: string;
   version: string;
+  activeTab?: string;
+  observability?: AgentObservabilityViewModel;
 }
 
 export type HostToWebviewMessage =
   | { type: 'STATE_UPDATE'; payload: DashboardViewModel }
   | { type: 'SERVER_CHECK_START'; serverId: string }
   | { type: 'NOTIFICATION'; message: string; level: 'info' | 'warn' | 'error' };
+
 

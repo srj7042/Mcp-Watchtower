@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { Application } from './core/application.js';
 import { Logger } from './utils/logger.js';
 import { registerCommands } from './commands/registerCommands.js';
@@ -7,6 +8,10 @@ import { HealthMonitor } from './monitoring/healthMonitor.js';
 import { NotificationService } from './services/notificationService.js';
 import { DashboardProvider } from './providers/dashboardProvider.js';
 import { ServerTreeProvider } from './providers/serverTreeProvider.js';
+import { SqliteStorage } from './storage/sqliteStorage.js';
+import { WatchtowerWebSocketServer } from './server/websocketServer.js';
+import { AgentManagerService } from './services/agentManagerService.js';
+import { PricingEngine } from './tokenization/pricingEngine.js';
 
 let appInstance: Application | undefined;
 
@@ -15,7 +20,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const logger = new Logger(outputChannel);
   context.subscriptions.push({ dispose: () => logger.dispose() });
 
-  logger.info('Activating MCP Watchtower Extension...');
+  logger.info('Activating MCP Watchtower & Agent Observability Platform...');
 
   const app = new Application(context, logger);
   appInstance = app;
@@ -31,7 +36,37 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const monitoringEnabled = config.get<boolean>('monitoring.enabled', true);
   const customPaths = config.get<string[]>('customConfigPaths', []);
 
-  // Initialize Discovery Service
+  // 1. Initialize SQLite Observability Storage
+  const storageDir = context.globalStorageUri ? context.globalStorageUri.fsPath : context.extensionPath;
+  const dbPath = path.join(storageDir, 'watchtower_observability.sqlite');
+  const storage = new SqliteStorage(dbPath, logger);
+  try {
+    await storage.initialize();
+    context.subscriptions.push(storage);
+  } catch (err) {
+    logger.error('Failed to initialize SQLite storage:', err);
+  }
+
+  // 2. Initialize WebSocket Event Server (Loopback only)
+  const wsServer = new WatchtowerWebSocketServer(app.eventBus, { port: 19840 }, logger);
+  try {
+    await wsServer.start();
+    context.subscriptions.push(wsServer);
+  } catch (err) {
+    logger.warn('Failed to start loopback WebSocket server:', err);
+  }
+
+  // 3. Initialize Agent Manager Service
+  const pricingEngine = new PricingEngine();
+  const agentManager = new AgentManagerService(app.eventBus, storage, wsServer, pricingEngine, logger);
+  try {
+    await agentManager.initialize();
+    context.subscriptions.push(agentManager);
+  } catch (err) {
+    logger.error('Failed to initialize AgentManagerService:', err);
+  }
+
+  // 4. Initialize Discovery Service
   const discoveryService = new ServerDiscoveryService(
     app.eventBus,
     { customPaths },
@@ -39,7 +74,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   );
   context.subscriptions.push(discoveryService);
 
-  // Initialize Health Monitor
+  // 5. Initialize Health Monitor
   const healthMonitor = new HealthMonitor(
     app.eventBus,
     {
@@ -52,7 +87,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   );
   context.subscriptions.push(healthMonitor);
 
-  // Initialize Notification Service
+  // 6. Initialize Notification Service
   const notificationService = new NotificationService(
     app.eventBus,
     healthMonitor.registry,
@@ -60,18 +95,20 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   );
   context.subscriptions.push(notificationService);
 
-  // Initialize Dashboard Provider
+  // 7. Initialize Dashboard Provider with Agent Observability modules
   const dashboardProvider = new DashboardProvider(
     context,
     app,
     app.eventBus,
     discoveryService,
     healthMonitor,
+    agentManager,
+    storage,
     logger
   );
   context.subscriptions.push(dashboardProvider);
 
-  // Initialize Server Tree Provider (Sidebar Explorer)
+  // 8. Initialize Server Tree Provider (Sidebar Explorer)
   const treeProvider = new ServerTreeProvider(
     discoveryService,
     healthMonitor,
@@ -99,7 +136,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     logger.error('Failed during initial discovery / health checks', err);
   }
 
-  logger.info('MCP Watchtower Extension activated successfully.');
+  logger.info('MCP Watchtower & Agent Observability Platform activated successfully.');
 }
 
 export async function deactivate(): Promise<void> {

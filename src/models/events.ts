@@ -1,6 +1,7 @@
 import { McpServerDefinition } from './server.js';
 import { McpHealthRecord } from './health.js';
 import { McpDiagnosticEvent } from './diagnostics.js';
+import { ObservabilityEvent } from '../observability/events.js';
 
 export interface WatchtowerEvents {
   'server:discovered': McpServerDefinition;
@@ -11,5 +12,6 @@ export interface WatchtowerEvents {
   'diagnostic:event': McpDiagnosticEvent;
   'monitoring:toggled': boolean;
   'config:reloaded': void;
+  'observability:event': ObservabilityEvent;
 }
 

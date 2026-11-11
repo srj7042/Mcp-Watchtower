@@ -63,6 +63,79 @@ function calculateCostClient(tokens: number, model: string): number {
   return (tokens / 1_000_000) * ratePerMillion;
 }
 
+function updatePersistentLiveBar(
+  model: string,
+  draftTokens: number,
+  requestTokens: number,
+  actualTokens: number,
+  cost: number,
+  mcpSummary?: { total: number; healthy: number }
+): void {
+  const modelBadge = document.getElementById('liveBarModelBadge');
+  const draftEl = document.getElementById('liveBarDraft');
+  const requestEl = document.getElementById('liveBarRequest');
+  const actualEl = document.getElementById('liveBarActual');
+  const costEl = document.getElementById('liveBarCost');
+  const mcpLabel = document.getElementById('liveBarMcpHealth');
+
+  const contextLimitEl = document.getElementById('liveBarContextLimit');
+  const contextPercentEl = document.getElementById('liveBarContextPercent');
+  const contextBarEl = document.getElementById('liveBarContextProgress');
+
+  if (modelBadge) {
+    if (model.includes('3.8')) modelBadge.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg> Google Gemini 3.8 Flash (Active)`;
+    else if (model.includes('3.0')) modelBadge.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg> Google Gemini 3.0 Flash`;
+    else if (model.includes('gemini')) modelBadge.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg> Google Gemini Flash`;
+    else modelBadge.textContent = model;
+  }
+
+  if (draftEl) draftEl.textContent = draftTokens.toLocaleString();
+  if (requestEl) requestEl.textContent = requestTokens.toLocaleString();
+  if (actualEl) actualEl.textContent = actualTokens.toLocaleString();
+  if (costEl) costEl.textContent = `$${cost.toFixed(6)}`;
+
+  if (mcpSummary && mcpLabel) {
+    const total = mcpSummary.total;
+    const healthy = mcpSummary.healthy;
+    const pct = total > 0 ? Math.round((healthy / total) * 100) : 100;
+    mcpLabel.textContent = `${pct}% Operational (${healthy}/${total} Healthy)`;
+  }
+
+  const contextLimits: Record<string, number> = {
+    'gemini-3.8-flash': 1000000,
+    'gemini-3.0-flash': 1000000,
+    'gemini-2.0-flash': 1000000,
+    'gemini-1.5-flash': 1000000,
+    'gemini-1.5-pro': 2000000,
+    'gpt-4o': 128000,
+    'gpt-4o-mini': 128000,
+    'o1': 200000,
+    'claude-3-7-sonnet': 200000,
+    'claude-3-5-sonnet': 200000,
+    'claude-3-5-haiku': 200000,
+    'claude-3-opus': 200000,
+    'deepseek': 64000,
+  };
+  let maxLimit = contextLimits[model];
+  if (!maxLimit) {
+    const m = model.toLowerCase();
+    if (m.includes('gemini') && m.includes('pro')) maxLimit = 2000000;
+    else if (m.includes('gemini')) maxLimit = 1000000;
+    else if (m.includes('claude') || m.includes('o1')) maxLimit = 200000;
+    else maxLimit = 128000;
+  }
+
+  const usedTokens = requestTokens > 0 ? requestTokens : draftTokens;
+  const percent = Math.min(100, (usedTokens / maxLimit) * 100);
+
+  if (contextLimitEl) contextLimitEl.textContent = maxLimit.toLocaleString();
+  if (contextPercentEl) contextPercentEl.textContent = `${percent.toFixed(2)}%`;
+  if (contextBarEl) {
+    contextBarEl.style.width = `${Math.max(usedTokens > 0 ? 1 : 0, percent)}%`;
+    contextBarEl.className = `live-bar-fill ${percent > 85 ? 'error' : percent > 60 ? 'degraded' : 'healthy'}`;
+  }
+}
+
 function initDashboard(): void {
   // 1. Tab Navigation
   const tabButtons = document.querySelectorAll('.nav-tab');
@@ -161,6 +234,9 @@ function initDashboard(): void {
       barEl.style.width = `${Math.max(usedTokens > 0 ? 1 : 0, percent)}%`;
       barEl.className = `progress-bar-fill ${percent > 85 ? 'error' : percent > 60 ? 'degraded' : 'healthy'}`;
     }
+
+    // Sync Top Persistent Live Bar
+    updatePersistentLiveBar(model, draftTokens, requestTokens, 0, cost);
   }
 
   draftArea?.addEventListener('input', updateLiveMeter);
@@ -281,6 +357,14 @@ function updateUI(): void {
     if (kpiDraftTokens) kpiDraftTokens.textContent = String(observability.tokenSummary.totalDraftTokens);
     if (kpiActualTokens) kpiActualTokens.textContent = String(observability.tokenSummary.totalActualTokens);
     if (kpiTotalCost) kpiTotalCost.textContent = `$${observability.tokenSummary.totalCostUsd.toFixed(4)}`;
+
+    // Update Persistent Top Live Bar
+    const liveModel = observability.liveTokens?.targetModel || 'gemini-3.8-flash';
+    const draft = observability.tokenSummary.totalDraftTokens;
+    const req = observability.tokenSummary.totalRequestTokens;
+    const act = observability.tokenSummary.totalActualTokens;
+    const cost = observability.tokenSummary.totalCostUsd;
+    updatePersistentLiveBar(liveModel, draft, req, act, cost, summary);
 
     // Render Overview lists
     renderOverviewAgents(observability.adapters);

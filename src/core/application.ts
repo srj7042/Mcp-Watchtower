@@ -25,6 +25,11 @@ export interface IApplicationServices {
   dashboardProvider?: {
     show(): void;
   };
+  wsServer?: {
+    getPort(): number;
+    getAuthToken(): string;
+    setMcpSummary?(total: number, healthy: number): void;
+  };
 }
 
 export class Application implements IDisposable {
@@ -61,6 +66,21 @@ export class Application implements IDisposable {
       this.services.dashboardProvider.show();
     } else {
       vscode.window.showInformationMessage('MCP Watchtower Dashboard is initializing...');
+    }
+  }
+
+  public async openFloatingWindow(): Promise<void> {
+    const port = this.services.wsServer?.getPort() || 19840;
+    const token = this.services.wsServer?.getAuthToken() || '';
+    const url = `http://127.0.0.1:${port}/floating?token=${token}`;
+    try {
+      await vscode.env.openExternal(vscode.Uri.parse(url));
+      vscode.window.showInformationMessage(
+        'MCP Watchtower: Floating Desktop HUD opened. Click "📌 Float On Top" to pin it always-on-top above all apps!'
+      );
+    } catch (err) {
+      this.logger.error('Failed to open floating desktop window:', err);
+      vscode.window.showErrorMessage(`Could not launch floating window: ${err}`);
     }
   }
 

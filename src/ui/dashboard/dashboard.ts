@@ -78,6 +78,10 @@ function initDashboard(): void {
     vscode.postMessage({ command: 'refreshAll' });
   });
 
+  document.getElementById('btnFloatingWindow')?.addEventListener('click', () => {
+    vscode.postMessage({ command: 'openFloatingWindow' });
+  });
+
   document.getElementById('btnToggleMonitoring')?.addEventListener('click', () => {
     vscode.postMessage({ command: 'toggleMonitoring' });
   });

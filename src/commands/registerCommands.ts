@@ -14,6 +14,13 @@ export function registerCommands(app: Application, logger: ILogger = defaultLogg
   );
 
   disposables.push(
+    vscode.commands.registerCommand('mcpWatchtower.openFloatingWindow', async () => {
+      logger.info('Executing command: mcpWatchtower.openFloatingWindow');
+      await app.openFloatingWindow();
+    })
+  );
+
+  disposables.push(
     vscode.commands.registerCommand('mcpWatchtower.refreshAll', async () => {
       logger.info('Executing command: mcpWatchtower.refreshAll');
       await app.refreshAll();

@@ -80,5 +80,25 @@ describe('WatchtowerWebSocketServer', () => {
 
     ws.close();
   });
+
+  it('serves floating HUD HTML and api state endpoint on loopback HTTP', async () => {
+    server = new WatchtowerWebSocketServer(eventBus, { authToken: 'hud_test_token' });
+    const port = await server.start(0);
+
+    // 1. Test /floating
+    const hudRes = await fetch(`http://127.0.0.1:${port}/floating?token=hud_test_token`);
+    expect(hudRes.status).toBe(200);
+    const hudHtml = await hudRes.text();
+    expect(hudHtml).toContain('Watchtower HUD');
+    expect(hudHtml).toContain('togglePictureInPicture');
+    expect(hudHtml).toContain('Gemini 3.8 Flash');
+
+    // 2. Test /api/state
+    const stateRes = await fetch(`http://127.0.0.1:${port}/api/state?token=hud_test_token`);
+    expect(stateRes.status).toBe(200);
+    const stateJson = await stateRes.json() as { targetModel: string; draftTokens: number };
+    expect(stateJson.targetModel).toBe('gemini-3.8-flash');
+    expect(typeof stateJson.draftTokens).toBe('number');
+  });
 });
 

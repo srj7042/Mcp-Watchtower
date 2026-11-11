@@ -16,6 +16,7 @@ export type WebviewToHostMessage =
   | { command: 'changeTab'; tab: string }
   | { command: 'setTargetModel'; model: string }
   | { command: 'clearHistory' }
+  | { command: 'openFloatingWindow' }
   | { command: 'ready' };
 
 export interface ServerViewModel {

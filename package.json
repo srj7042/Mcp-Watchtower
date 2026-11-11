@@ -39,6 +39,12 @@
         "category": "MCP Watchtower"
       },
       {
+        "command": "mcpWatchtower.openFloatingWindow",
+        "title": "Open Floating Desktop Window (Always on Top)",
+        "category": "MCP Watchtower",
+        "icon": "$(pin)"
+      },
+      {
         "command": "mcpWatchtower.refreshAll",
         "title": "Refresh All Servers",
         "category": "MCP Watchtower",

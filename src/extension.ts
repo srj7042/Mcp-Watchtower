@@ -121,6 +121,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     discoveryService,
     healthMonitor,
     dashboardProvider,
+    wsServer,
   });
 
   const commandDisposables = registerCommands(app, logger);

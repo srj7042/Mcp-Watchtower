@@ -136,6 +136,9 @@ export class DashboardProvider implements IDisposable {
       case 'clearHistory':
         this.postStateUpdate();
         break;
+      case 'openFloatingWindow':
+        await vscode.commands.executeCommand('mcpWatchtower.openFloatingWindow');
+        break;
     }
   }
 
